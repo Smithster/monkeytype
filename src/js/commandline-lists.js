@@ -13,6 +13,7 @@ import * as TestUI from "./test-ui";
 import * as TestLogic from "./test-logic";
 import * as Funbox from "./funbox";
 import * as TagController from "./tag-controller";
+import * as PresetController from "./preset-controller";
 import * as Commandline from "./commandline";
 import * as CustomText from "./custom-text";
 
@@ -241,6 +242,30 @@ export function updateTagCommands() {
   }
 }
 
+let commandsPresets = {
+  title: "Apply preset...",
+  list: [],
+};
+
+export function updatePresetCommands() {
+  if (DB.getSnapshot().presets.length > 0) {
+    commandsPresets.list = [];
+
+    DB.getSnapshot().presets.forEach((preset) => {
+      let dis = preset.name;
+
+      commandsPresets.list.push({
+        id: "applyPreset" + preset.id,
+        display: dis,
+        exec: () => {
+          PresetController.apply(preset.id);
+          TestUI.updateModesNotice();
+        },
+      });
+    });
+  }
+}
+
 let commandsRepeatQuotes = {
   title: "Change repeat quotes...",
   list: [
@@ -390,6 +415,20 @@ let commandsRandomTheme = {
       display: "fav",
       exec: () => {
         UpdateConfig.setRandomTheme("fav");
+      },
+    },
+    {
+      id: "setRandomLight",
+      display: "light",
+      exec: () => {
+        UpdateConfig.setRandomTheme("light");
+      },
+    },
+    {
+      id: "setRandomDark",
+      display: "dark",
+      exec: () => {
+        UpdateConfig.setRandomTheme("dark");
       },
     },
   ],
@@ -547,6 +586,22 @@ let commandsPaceCaretStyle = {
         UpdateConfig.setPaceCaretStyle("underline");
       },
     },
+    {
+      id: "setPaceCaretStyleCarrot",
+      display: "carrot",
+      visible: false,
+      exec: () => {
+        UpdateConfig.setPaceCaretStyle("carrot");
+      },
+    },
+    {
+      id: "setPaceCaretStyleBanana",
+      display: "banana",
+      visible: false,
+      exec: () => {
+        UpdateConfig.setPaceCaretStyle("banana");
+      },
+    },
   ],
 };
 
@@ -694,6 +749,13 @@ let commandsKeymapLegendStyle = {
 let commandsHighlightMode = {
   title: "Change highlight mode...",
   list: [
+    {
+      id: "setHighlightModeOff",
+      display: "off",
+      exec: () => {
+        UpdateConfig.setHighlightMode("off");
+      },
+    },
     {
       id: "setHighlightModeLetter",
       display: "letter",
@@ -1306,6 +1368,17 @@ export let defaultCommands = {
       },
     },
     {
+      visible: false,
+      id: "applyPreset",
+      display: "Apply preset...",
+      subgroup: true,
+      exec: () => {
+        updatePresetCommands();
+        current.push(commandsPresets);
+        Commandline.show();
+      },
+    },
+    {
       id: "changeConfidenceMode",
       display: "Change confidence mode...",
       subgroup: true,
@@ -1650,6 +1723,26 @@ export let defaultCommands = {
       },
     },
     {
+      id: "changeCustomLayoutfluid",
+      display: "Change custom layoutfluid...",
+      defaultValue: "qwerty dvorak colemak",
+      input: true,
+      exec: (input) => {
+        UpdateConfig.setCustomLayoutfluid(input);
+        if (Funbox.active === "layoutfluid") TestLogic.restart();
+        // UpdateConfig.setLayout(
+        //   Config.customLayoutfluid
+        //     ? Config.customLayoutfluid.split("_")[0]
+        //     : "qwerty"
+        // );
+        // UpdateConfig.setKeymapLayout(
+        //   Config.customLayoutfluid
+        //     ? Config.customLayoutfluid.split("_")[0]
+        //     : "qwerty"
+        // );
+      },
+    },
+    {
       id: "changeTheme",
       display: "Change theme...",
       subgroup: true,
@@ -1770,9 +1863,9 @@ export let defaultCommands = {
       },
     },
     {
-      id: "randomiseTheme",
+      id: "randomizeTheme",
       display: "Next random theme",
-      exec: () => ThemeController.randomiseTheme(),
+      exec: () => ThemeController.randomizeTheme(),
     },
     {
       id: "viewTypingPage",
@@ -1823,9 +1916,7 @@ export let defaultCommands = {
             {
               id: "bailOutNo",
               display: "Nevermind",
-              exec: () => {
-                Commandline.hide();
-              },
+              exec: () => {},
               available: () => {
                 return canBailOut();
               },

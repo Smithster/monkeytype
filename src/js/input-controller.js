@@ -20,6 +20,7 @@ import * as TimerProgress from "./timer-progress";
 import * as TestTimer from "./test-timer";
 import * as Focus from "./focus";
 import * as ShiftTracker from "./shift-tracker";
+import * as Replay from "./replay.js";
 
 $("#wordsInput").keypress((event) => {
   event.preventDefault();
@@ -54,11 +55,15 @@ function handleTab(event) {
   } else if (
     !TestUI.resultCalculating &&
     $("#commandLineWrapper").hasClass("hidden") &&
-    $("#simplePopupWrapper").hasClass("hidden")
+    $("#simplePopupWrapper").hasClass("hidden") &&
+    !$(".page.pageLogin").hasClass("active")
   ) {
     if ($(".pageTest").hasClass("active")) {
       if (Config.quickTab) {
-        if (Config.mode == "zen" && !event.shiftKey) {
+        if (
+          (Config.mode == "zen" && !event.shiftKey) ||
+          (TestLogic.hasTab && !event.shiftKey)
+        ) {
           //ignore
         } else {
           if (event.shiftKey) ManualRestart.set();
@@ -126,6 +131,7 @@ function handleBackspace(event) {
         }
       }
       TestLogic.words.decreaseCurrentIndex();
+      Replay.addReplayEvent("backWord");
       TestUI.setCurrentWordElementIndex(TestUI.currentWordElementIndex - 1);
       TestUI.updateActiveElement(true);
       Funbox.toggleScript(TestLogic.words.getCurrent());
@@ -134,6 +140,7 @@ function handleBackspace(event) {
   } else {
     if (Config.confidenceMode === "max") return;
     if (event["ctrlKey"] || event["altKey"]) {
+      Replay.addReplayEvent("clearWord");
       let limiter = " ";
       if (
         TestLogic.input.current.lastIndexOf("-") >
@@ -161,6 +168,7 @@ function handleBackspace(event) {
       TestLogic.input.setCurrent(
         TestLogic.input.current.substring(0, TestLogic.input.current.length - 1)
       );
+      Replay.addReplayEvent("deleteLetter");
     }
     TestUI.updateWordElement(!Config.blindMode);
   }
@@ -197,10 +205,15 @@ function handleSpace(event, isEnter) {
 
   let currentWord = TestLogic.words.getCurrent();
   if (Funbox.active === "layoutfluid" && Config.mode !== "time") {
-    const layouts = ["qwerty", "dvorak", "colemak"];
+    // here I need to check if Config.customLayoutFluid exists because of my scuffed solution of returning whenever value is undefined in the setCustomLayoutfluid function
+    const layouts = Config.customLayoutfluid
+      ? Config.customLayoutfluid.split("#")
+      : ["qwerty", "dvorak", "colemak"];
     let index = 0;
     let outof = TestLogic.words.length;
-    index = Math.floor((TestLogic.input.history.length + 1) / (outof / 3));
+    index = Math.floor(
+      (TestLogic.input.history.length + 1) / (outof / layouts.length)
+    );
     if (Config.layout !== layouts[index] && layouts[index] !== undefined) {
       Notifications.add(`--- !!! ${layouts[index]} !!! ---`, 0);
     }
@@ -221,6 +234,7 @@ function handleSpace(event, isEnter) {
   dontInsertSpace = true;
   if (currentWord == TestLogic.input.current || Config.mode == "zen") {
     //correct word or in zen mode
+    Replay.addReplayEvent("submitCorrectWord");
     PaceCaret.handleSpace(true, currentWord);
     TestStats.incrementAccuracy(true);
     TestLogic.input.pushHistory();
@@ -238,6 +252,7 @@ function handleSpace(event, isEnter) {
     }
   } else {
     //incorrect word
+    Replay.addReplayEvent("submitErrorWord");
     PaceCaret.handleSpace(false, currentWord);
     if (Funbox.active !== "nospace") {
       if (!Config.playSoundOnError || Config.blindMode) {
@@ -285,12 +300,12 @@ function handleSpace(event, isEnter) {
     // currentKeypress.words.push(TestLogic.words.currentIndex);
     TestStats.incrementKeypressCount();
     TestStats.pushKeypressWord(TestLogic.words.currentIndex);
+    TestStats.updateLastKeypress();
     if (Config.difficulty == "expert" || Config.difficulty == "master") {
       TestLogic.fail();
       return;
     } else if (TestLogic.words.currentIndex == TestLogic.words.length) {
       //submitted last word that is incorrect
-      TestStats.setLastSecondNotRound();
       TestLogic.finish();
       return;
     }
@@ -557,6 +572,7 @@ function handleAlpha(event) {
   }
 
   if (!thisCharCorrect) {
+    Replay.addReplayEvent("incorrectLetter", event.key);
     TestStats.incrementAccuracy(false);
     TestStats.incrementKeypressErrors();
     // currentError.count++;
@@ -564,6 +580,7 @@ function handleAlpha(event) {
     thisCharCorrect = false;
     TestStats.pushMissedWord(TestLogic.words.getCurrent());
   } else {
+    Replay.addReplayEvent("correctLetter", event.key);
     TestStats.incrementAccuracy(true);
     thisCharCorrect = true;
     if (Config.mode == "zen") {
@@ -606,6 +623,7 @@ function handleAlpha(event) {
     }
   }
   TestStats.incrementKeypressCount();
+  TestStats.updateLastKeypress();
   TestStats.pushKeypressWord(TestLogic.words.currentIndex);
   // currentKeypress.count++;
   // currentKeypress.words.push(TestLogic.words.currentIndex);
@@ -622,10 +640,11 @@ function handleAlpha(event) {
     TestUI.setActiveWordTop(document.querySelector("#words .active").offsetTop);
   }
 
-  //max length of the input is 20 unless in zen mode
+  //max length of the input is 20 unless in zen mode then its 30
   if (
-    Config.mode == "zen" ||
-    TestLogic.input.current.length < TestLogic.words.getCurrent().length + 20
+    (Config.mode == "zen" && TestLogic.input.current.length < 30) ||
+    (Config.mode !== "zen" &&
+      TestLogic.input.current.length < TestLogic.words.getCurrent().length + 20)
   ) {
     TestLogic.input.appendCurrent(event["key"]);
   }
@@ -669,7 +688,6 @@ function handleAlpha(event) {
       TestLogic.input.pushHistory();
 
       TestLogic.corrected.pushHistory();
-      TestStats.setLastSecondNotRound();
       TestLogic.finish();
     }
   }

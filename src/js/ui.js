@@ -162,6 +162,9 @@ export function changePage(page) {
     SignOutButton.hide();
   } else if (page == "account") {
     if (!firebase.auth().currentUser) {
+      console.log(
+        `current user is ${firebase.auth().currentUser}, going back to login`
+      );
       changePage("login");
     } else {
       setPageTransition(true);
