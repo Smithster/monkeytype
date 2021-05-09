@@ -357,6 +357,14 @@ let commandsSoundOnClick = {
         Sound.playClick(Config.playSoundOnClick);
       },
     },
+    {
+      id: "setSoundOnClickZoinked",
+      display: "zoinked",
+      exec: () => {
+        UpdateConfig.setPlaySoundOnClick("zoinked");
+        Sound.playClick(Config.playSoundOnClick);
+      },
+    },
   ],
 };
 

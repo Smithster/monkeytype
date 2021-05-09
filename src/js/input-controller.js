@@ -164,7 +164,7 @@ function handleBackspace(event) {
     }
     TestUI.updateWordElement(!Config.blindMode);
   }
-  Sound.playClick(Config.playSoundOnClick);
+  Sound.playClick(event.key);
   if (Config.keymapMode === "react") {
     Keymap.flashKey(event.code, true);
   } else if (Config.keymapMode === "next" && Config.mode !== "zen") {
@@ -234,14 +234,14 @@ function handleSpace(event, isEnter) {
     // currentKeypress.count++;
     // currentKeypress.words.push(TestLogic.words.currentIndex);
     if (Funbox.active !== "nospace") {
-      Sound.playClick(Config.playSoundOnClick);
+      Sound.playClick(event.key);
     }
   } else {
     //incorrect word
     PaceCaret.handleSpace(false, currentWord);
     if (Funbox.active !== "nospace") {
       if (!Config.playSoundOnError || Config.blindMode) {
-        Sound.playClick(Config.playSoundOnClick);
+        Sound.playClick(event.key);
       } else {
         Sound.playError(Config.playSoundOnError);
       }
@@ -479,7 +479,7 @@ function handleAlpha(event) {
 
   //show dead keys
   if (event.key === "Dead") {
-    Sound.playClick(Config.playSoundOnClick);
+    Sound.playClick(event.key);
     $(
       document.querySelector("#words .word.active").querySelectorAll("letter")[
         TestLogic.input.current.length
@@ -575,10 +575,10 @@ function handleAlpha(event) {
   }
 
   if (thisCharCorrect) {
-    Sound.playClick(Config.playSoundOnClick);
+    Sound.playClick(event.key);
   } else {
     if (!Config.playSoundOnError || Config.blindMode) {
-      Sound.playClick(Config.playSoundOnClick);
+      Sound.playClick(event.key);
     } else {
       Sound.playError(Config.playSoundOnError);
     }
