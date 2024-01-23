@@ -31,10 +31,11 @@
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "skipLibCheck": false,
+    "jsx": "react-jsx",
     "paths": {
       "@backend/*": ["../backend/src/*"]
     }
   },
-  "include": ["./src/**/*.ts"],
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"],
   "files": ["src/ts/modules.d.ts"]
 }

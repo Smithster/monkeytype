@@ -38,7 +38,7 @@ export const BASE_CONFIGURATION: MonkeyTypes.Configuration = {
     apeKeySaltRounds: 5,
   },
   users: {
-    signUp: false,
+    signUp: true,
     lastHashesCheck: {
       enabled: false,
       maxHashes: 0,

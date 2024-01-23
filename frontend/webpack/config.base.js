@@ -24,7 +24,7 @@ const BASE_CONFIG = {
   entry: {
     monkeytype: resolve(__dirname, "../src/ts/index.ts"),
   },
-  resolve: { extensions: [".ts", ".js"] },
+  resolve: { extensions: [".ts", ".js", ".tsx"] },
   output: {
     publicPath: "/",
     filename: "./js/[name].[chunkhash:8].js",
